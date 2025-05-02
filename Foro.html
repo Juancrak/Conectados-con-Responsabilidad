@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Foro con Respuestas - Conectados con Responsabilidad</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-50 text-gray-800 font-sans min-h-screen">
+  <header class="bg-green-100 p-6 shadow-md text-center">
+    <h1 class="text-3xl font-bold text-green-800">Foro de experiencias</h1>
+    <p class="text-green-700 mt-2">Comparte tu historia o responde a otras personas.</p>
+  </header>
+
+  <main class="max-w-2xl mx-auto py-10 px-4">
+    <!-- Formulario principal -->
+    <section class="bg-white p-6 rounded-2xl shadow-md mb-10">
+      <h2 class="text-xl font-bold mb-4 text-green-800">Escribe tu experiencia</h2>
+      <form id="formulario">
+        <input id="nombre" type="text" placeholder="Tu nombre o alias" required class="w-full p-3 mb-4 border rounded-lg">
+        <textarea id="mensaje" rows="4" placeholder="Tu experiencia..." required class="w-full p-3 mb-4 border rounded-lg"></textarea>
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700 transition">Publicar</button>
+      </form>
+    </section>
+
+    <!-- Mensajes con respuestas -->
+    <section>
+      <h2 class="text-xl font-bold mb-4 text-green-800">Mensajes publicados</h2>
+      <div id="mensajes" class="space-y-6"></div>
+    </section>
+  </main>
+
+  <script>
+    const formulario = document.getElementById('formulario');
+    const nombreInput = document.getElementById('nombre');
+    const mensajeInput = document.getElementById('mensaje');
+    const mensajesDiv = document.getElementById('mensajes');
+
+    let mensajes = JSON.parse(localStorage.getItem('foroRespuestas')) || [];
+
+    function guardar() {
+      localStorage.setItem('foroRespuestas', JSON.stringify(mensajes));
+    }
+
+    function mostrarMensajes() {
+      mensajesDiv.innerHTML = '';
+      mensajes.slice().reverse().forEach((msg, index) => {
+        const div = document.createElement('div');
+        div.className = 'bg-white p-4 rounded-xl shadow';
+
+        const respuestasHTML = msg.respuestas.map(resp => `
+          <div class="ml-4 mt-2 border-l-2 border-green-200 pl-4">
+            <p class="text-sm text-gray-500">${resp.fecha} — <span class="font-semibold text-green-700">${resp.nombre}</span></p>
+            <p class="text-gray-700">${resp.texto}</p>
+          </div>
+        `).join('');
+
+        div.innerHTML = `
+          <p class="text-sm text-gray-500 mb-1">${msg.fecha} — <span class="font-semibold text-green-700">${msg.nombre}</span></p>
+          <p class="text-gray-800 mb-2">${msg.texto}</p>
+          ${respuestasHTML}
+          <form data-index="${index}" class="form-respuesta mt-4">
+            <input name="nombre" placeholder="Tu nombre o alias" required class="w-full p-2 mb-2 border rounded">
+            <textarea name="texto" rows="2" placeholder="Escribe una respuesta..." required class="w-full p-2 mb-2 border rounded"></textarea>
+            <button type="submit" class="text-sm bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600">Responder</button>
+          </form>
+        `;
+
+        mensajesDiv.appendChild(div);
+      });
+    }
+
+    formulario.addEventListener('submit', e => {
+      e.preventDefault();
+      const nombre = nombreInput.value.trim();
+      const texto = mensajeInput.value.trim();
+      if (!nombre || !texto) return;
+      mensajes.push({
+        nombre,
+        texto,
+        fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
+        respuestas: []
+      });
+      guardar();
+      formulario.reset();
+      mostrarMensajes();
+    });
+
+    mensajesDiv.addEventListener('submit', e => {
+      if (!e.target.classList.contains('form-respuesta')) return;
+      e.preventDefault();
+      const index = e.target.dataset.index;
+      const nombre = e.target.nombre.value.trim();
+      const texto = e.target.texto.value.trim();
+      if (!nombre || !texto) return;
+      mensajes[index].respuestas.push({
+        nombre,
+        texto,
+        fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
+      });
+      guardar();
+      mostrarMensajes();
+    });
+
+    mostrarMensajes();
+  </script>
+</body>
+</html>
